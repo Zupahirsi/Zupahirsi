@@ -1,0 +1,45 @@
+import requests
+import time
+
+class DerivBot:
+    def __init__(self, api_token):
+        self.api_token = api_token
+        self.base_url = "https://api.deriv.com/api/v1"
+        self.session = requests.Session()
+        self.session.headers.update({"Authorization": f"Bearer {api_token}"})
+
+    def get_market_data(self, symbol):
+        url = f"{self.base_url}/ticks/{symbol}"
+        response = self.session.get(url)
+        return response.json()
+
+    def place_trade(self, amount, symbol, contract_type, duration, duration_unit):
+        url = f"{self.base_url}/trades"
+        trade_data = {
+            "amount": amount,
+            "symbol": symbol,
+            "contract_type": contract_type,
+            "duration": duration,
+            "duration_unit": duration_unit,
+        }
+        response = self.session.post(url, json=trade_data)
+        return response.json()
+
+    def run(self):
+        # Basic example logic (customize this part)
+        symbol = "R_100"  # Example symbol
+        contract_type = "CALL"  # or "PUT"
+        amount = 1.0  # Trade amount
+        duration = 1  # Trade duration
+        duration_unit = "m"  # Minutes
+
+        while True:
+            market_data = self.get_market_data(symbol)
+            # Basic trend strategy: Buy if the last price increased, sell if decreased
+            if market_data["last_tick"]["quote"] > market_data["ticks"][0]["quote"]:
+                self.place_trade(amount, symbol, contract_type="CALL", duration=duration, duration_unit=duration_unit)
+            else:
+                self.place_trade(amount, symbol, contract_type="PUT", duration=duration, duration_unit=duration_unit)
+            
+            # Sleep to avoid overloading the API
+            time.sleep(60)  # Adjust frequency as needed
